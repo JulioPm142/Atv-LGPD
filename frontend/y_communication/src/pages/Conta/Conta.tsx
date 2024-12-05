@@ -1,255 +1,170 @@
 import React, { useState, useEffect } from "react";
-import "./Conta.css";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFileContract } from "@fortawesome/free-solid-svg-icons";
-import { Link, Navigate, useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const termsData = [
-  {
-    titulo: "Termo 1",
-    id: "1",
-    descricao: "Descrição do Termo 1",
-    obrigatorio: true,
-    aceito: true,
-  },
-  {
-    titulo: "Termo 2",
-    id: "2",
-    descricao: "Descrição do Termo 2",
-    obrigatorio: false,
-    aceito: false,
-  },
-  {
-    titulo: "Termo 3",
-    id: "3",
-    descricao: "Descrição do Termo 3",
-    obrigatorio: false,
-    aceito: false,
-  },
-];
-
-interface Termo {
-  descricao: string;
-  id: string;
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
 }
 
-const Account: React.FC = () => {
-  const [user, setUser] = useState({
-    name: "John Doe",
-    email: "johndoe@example.com",
-    phone: "+55 12 3456-7890",
-    address: "Rua Exemplo, 123, São José dos Campos, SP, Brasil",
-  });
+interface Term {
+  id: number;
+  descricao: string;
+}
 
-  const [passwords, setPasswords] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
+const Conta: React.FC = () => {
+  const [userData, setUserData] = useState<User | null>(null);
+  const [userTerms, setUserTerms] = useState<Term[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [showTerms, setShowTerms] = useState(false);
-  const [terms, setTerms] = useState(termsData);
+  // Carregar dados do usuário e termos aceitos ao montar o componente
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUserData(parsedUser);
+        fetchTerms(parsedUser.id);
+      } catch (error) {
+        console.error("Erro ao carregar os dados do usuário:", error);
+      }
+    }
+    setIsLoading(false);
+  }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setUser((prevState) => ({ ...prevState, [name]: value }));
-  };
-
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setPasswords((prevState) => ({ ...prevState, [name]: value }));
-  };
-
-  const navigate = useNavigate();
-
-  const handleSave = () => {
-    // Criar o objeto no formato solicitado
-    const requestBody = {
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      address: user.address,
-      terms: terms.map((term, index) => ({
-        id: (index + 1).toString(), // ID baseado no índice + 1
-        titulo: term.titulo,
-        accepted: term.aceito,
-      })),
-    };
-
-    console.log("Dados enviados ao backend:", requestBody);
-  };
-
-  const DeletarConta = () => {};
-
-  const handleBack = () => {
-    navigate("/");
-  };
-
-  const handlePasswordSave = () => {
-    if (passwords.newPassword === passwords.confirmPassword) {
-      console.log("Senha alterada:", passwords.newPassword);
-    } else {
-      console.log("As senhas não coincidem");
+  // Busca os termos aceitos pelo usuário
+  const fetchTerms = async (userId: number) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/aceitacao/${userId}`);
+      setUserTerms(response.data);
+    } catch (error) {
+      console.error("Erro ao buscar termos aceitos:", error);
     }
   };
 
-  const toggleTerms = () => {
-    setShowTerms(!showTerms);
+  // Atualiza os campos de entrada dinamicamente
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!userData) return;
+
+    const { name, value } = e.target;
+    setUserData((prevData) => (prevData ? { ...prevData, [name]: value } : null));
   };
 
-  const handleTermChange = (index: number) => {
-    const updatedTerms = terms.map((term, i) =>
-      i === index ? { ...term, aceito: !term.aceito } : term
+  // Atualiza os dados do usuário no backend
+  const handleUpdate = async () => {
+    if (!userData) {
+      alert("Usuário não encontrado.");
+      return;
+    }
+
+    try {
+      const response = await axios.put(
+        `http://localhost:5000/usuario/${userData.id}`,
+        userData
+      );
+      alert("Informações atualizadas com sucesso!");
+      localStorage.setItem("user", JSON.stringify(response.data));
+    } catch (error) {
+      console.error("Erro ao atualizar as informações:", error);
+      alert("Erro ao atualizar as informações. Tente novamente mais tarde.");
+    }
+  };
+
+  // Deleta o usuário do sistema
+  const handleDelete = async () => {
+    if (!userData) {
+      alert("Usuário não encontrado.");
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      "Tem certeza de que deseja deletar sua conta? Esta ação não pode ser desfeita."
     );
-    setTerms(updatedTerms);
+
+    if (!confirmDelete) return;
+
+    try {
+      await axios.delete(`http://localhost:5000/usuario/${userData.id}`);
+      alert("Conta deletada com sucesso.");
+      localStorage.removeItem("user");
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Erro ao deletar conta:", error);
+      alert("Erro ao deletar a conta. Tente novamente mais tarde.");
+    }
   };
 
-  const [termosAceitos, setTermosAceitos] = useState<Termo[]>([]); // Corrigir para array de Termos
-
-  useEffect(() => {
-    const userId = 1; // Substituir pelo ID real do usuário logado
-    axios
-      .get(`http://localhost:5000/aceitacao/${userId}`)
-      .then((response) => setTermosAceitos(response.data))
-      .catch((error) => console.error("Erro ao buscar termos aceitos:", error));
-  }, []);
+  if (isLoading) {
+    return <p>Carregando informações do usuário...</p>;
+  }
 
   return (
-    <div className="account">
+    <div className="account-container">
       <h1>Minha Conta</h1>
-      <div className="account-info">
-        <div className="info-item">
-          <label>Nome:</label>
-          <input
-            type="text"
-            name="name"
-            value={user.name}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="info-item">
-          <label>Email:</label>
-          <input
-            type="email"
-            name="email"
-            value={user.email}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="info-item">
-          <label>Telefone:</label>
-          <input
-            type="tel"
-            name="phone"
-            value={user.phone}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="info-item">
-          <label>Endereço:</label>
-          <input
-            type="text"
-            name="address"
-            value={user.address}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="terms-of-use">
-          <button className="terms-button" onClick={toggleTerms}>
-            <FontAwesomeIcon icon={faFileContract} className="terms-icon" />
-            Termos de Uso
+      {userData ? (
+        <>
+          <div className="info-item">
+            <label>Nome:</label>
+            <input
+              type="text"
+              name="name"
+              value={userData.name}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="info-item">
+            <label>Email:</label>
+            <input
+              type="email"
+              name="email"
+              value={userData.email}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="info-item">
+            <label>Telefone:</label>
+            <input
+              type="tel"
+              name="phone"
+              value={userData.phone}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="info-item">
+            <label>Endereço:</label>
+            <input
+              type="text"
+              name="address"
+              value={userData.address}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="terms-section">
+            <h3>Termos Aceitos:</h3>
+            {userTerms.length > 0 ? (
+              <ul>
+                {userTerms.map((term) => (
+                  <li key={term.id}>{term.descricao}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>Nenhum termo aceito.</p>
+            )}
+          </div>
+          <button onClick={handleUpdate} className="update-button">
+            Atualizar Informações
           </button>
-        </div>
-      </div>
-
-      {showTerms && (
-        <div className="terms-container">
-          <h2>Termos de Uso</h2>
-          {terms.map((term, index) => (
-            <div key={`${index}-${term.aceito}`} className="term-item">
-              <h3>{term.titulo}</h3>
-              <p>{term.descricao}</p>
-              {term.obrigatorio ? (
-                <p className="term-obrigatorio">Termo Obrigatório</p>
-              ) : (
-                <div className="term-footer">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={term.aceito}
-                      onChange={() => handleTermChange(index)}
-                    />{" "}
-                    Aceito
-                  </label>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+          <button onClick={handleDelete} className="delete-button">
+            Deletar Conta
+          </button>
+        </>
+      ) : (
+        <p>Usuário não encontrado.</p>
       )}
-      <div>
-        <h1>Minha Conta</h1>
-        <h3>Termos Aceitos</h3>
-        <ul>
-          {termosAceitos.map((termo) => (
-            <li key={termo.id}>{termo.descricao}</li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="account-buttons">
-        <button onClick={handleBack}>Voltar</button>
-        <button onClick={handleSave}>Salvar</button>
-      </div>
-      <div className="change-password">
-        <h2>Alterar Senha</h2>
-        <div className="password-item">
-          <label>Senha Atual:</label>
-        </div>
-        <div className="password-input">
-          <input
-            type="password"
-            name="currentPassword"
-            value={passwords.currentPassword}
-            onChange={handlePasswordChange}
-            placeholder="Senha Atual"
-          />
-        </div>
-        <div className="password-item">
-          <label>Nova Senha:</label>
-        </div>
-        <div className="password-input">
-          <input
-            type="password"
-            name="newPassword"
-            value={passwords.newPassword}
-            onChange={handlePasswordChange}
-            placeholder="Nova Senha"
-          />
-        </div>
-        <div className="password-item">
-          <label>Confirmar Senha:</label>
-        </div>
-        <div className="password-input">
-          <input
-            type="password"
-            name="confirmPassword"
-            value={passwords.confirmPassword}
-            onChange={handlePasswordChange}
-            placeholder="Confirmar Nova Senha"
-          />
-        </div>
-        <div className="password-buttons">
-          <button onClick={handlePasswordSave}>Confirmar</button>
-        </div>
-      </div>
-      <div className="account-buttonsD">
-        <button onClick={DeletarConta}>Deletar Contar</button>
-      </div>
     </div>
   );
 };
 
-export default Account;
+export default Conta;

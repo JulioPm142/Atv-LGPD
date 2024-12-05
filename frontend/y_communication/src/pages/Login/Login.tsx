@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import "./Login.css";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -25,21 +27,38 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div>
-      <h1>Login</h1>
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <input
-        type="password"
-        placeholder="Senha"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <button onClick={handleLogin}>Entrar</button>
+    <div className="login-container">
+      <h2>Login</h2>
+      <form>
+        <div className="form-group">
+          <label htmlFor="email">Email:</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label htmlFor="password">Senha:</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+        <button type="submit" onClick={handleLogin} className="login-button">
+          Entrar
+        </button>
+      </form>
+      <p>
+        Não tem uma conta? <Link to="/Registrar">Cadastre-se</Link>
+      </p>
     </div>
   );
 };

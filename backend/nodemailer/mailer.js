@@ -48,6 +48,35 @@ db.query(createTableQuery, (err) => {
   console.log("Tabela 'usuarios' pronta.");
 });
 
+const createTermsTableQuery = `
+CREATE TABLE IF NOT EXISTS termos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  descricao TEXT NOT NULL,
+  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+`;
+db.query(createTermsTableQuery, (err) => {
+  if (err) {
+    console.error("Erro ao criar tabela de termos:", err);
+  }
+});
+
+const createAcceptanceTableQuery = `
+CREATE TABLE IF NOT EXISTS aceitacoes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id INT NOT NULL,
+  termo_id INT NOT NULL,
+  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+  FOREIGN KEY (termo_id) REFERENCES termos(id)
+);
+`;
+db.query(createAcceptanceTableQuery, (err) => {
+  if (err) {
+    console.error("Erro ao criar tabela de aceitações:", err);
+  }
+});
+
 // Função para enviar email
 function sendEmail({ email, subject }) {
   return new Promise((resolve, reject) => {
@@ -101,9 +130,9 @@ app.post("/usuario", (req, res) => {
     }
 
     // Enviar email após registrar
-    sendEmail({ email, subject: "Cadastro realizado com sucesso!" })
-      .then(() => res.json({ message: "Usuário registrado e email enviado com sucesso." }))
-      .catch((error) => res.status(500).json({ message: "Erro ao enviar email.", error }));
+    // sendEmail({ email, subject: "Cadastro realizado com sucesso!" })
+    //   .then(() => res.json({ message: "Usuário registrado e email enviado com sucesso." }))
+    //   .catch((error) => res.status(500).json({ message: "Erro ao enviar email.", error }));
   });
 });
 
@@ -171,19 +200,6 @@ app.post("/login", (req, res) => {
   });
 });
 
-const createTermsTableQuery = `
-CREATE TABLE IF NOT EXISTS termos (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  descricao TEXT NOT NULL,
-  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-`;
-db.query(createTermsTableQuery, (err) => {
-  if (err) {
-    console.error("Erro ao criar tabela de termos:", err);
-  }
-});
-
 app.post("/termo", (req, res) => {
   const { descricao } = req.body;
 
@@ -208,22 +224,6 @@ app.get("/termo", (req, res) => {
   });
 });
 
-const createAcceptanceTableQuery = `
-CREATE TABLE IF NOT EXISTS aceitacoes (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  usuario_id INT NOT NULL,
-  termo_id INT NOT NULL,
-  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
-  FOREIGN KEY (termo_id) REFERENCES termos(id)
-);
-`;
-db.query(createAcceptanceTableQuery, (err) => {
-  if (err) {
-    console.error("Erro ao criar tabela de aceitações:", err);
-  }
-});
-
 app.post("/aceitacao", (req, res) => {
   const { usuario_id, termo_id } = req.body;
 
@@ -236,7 +236,6 @@ app.post("/aceitacao", (req, res) => {
     res.json({ message: "Aceitação registrada com sucesso." });
   });
 });
-
 
 // Iniciar servidor
 app.listen(port, () => {
