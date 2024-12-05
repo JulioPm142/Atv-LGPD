@@ -1,45 +1,51 @@
-import React, { useState } from 'react';
-import './Conta.css';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFileContract } from '@fortawesome/free-solid-svg-icons';
-import { Link, Navigate,useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import "./Conta.css";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faFileContract } from "@fortawesome/free-solid-svg-icons";
+import { Link, Navigate, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const termsData = [
   {
-    titulo: 'Termo 1',
-    id: '1',
-    descricao: 'Descrição do Termo 1',
+    titulo: "Termo 1",
+    id: "1",
+    descricao: "Descrição do Termo 1",
     obrigatorio: true,
     aceito: true,
   },
   {
-    titulo: 'Termo 2',
-    id: '2',
-    descricao: 'Descrição do Termo 2',
+    titulo: "Termo 2",
+    id: "2",
+    descricao: "Descrição do Termo 2",
     obrigatorio: false,
     aceito: false,
   },
   {
-    titulo: 'Termo 3',
-    id: '3',
-    descricao: 'Descrição do Termo 3',
+    titulo: "Termo 3",
+    id: "3",
+    descricao: "Descrição do Termo 3",
     obrigatorio: false,
     aceito: false,
   },
 ];
 
+interface Termo {
+  descricao: string;
+  id: string;
+}
+
 const Account: React.FC = () => {
   const [user, setUser] = useState({
-    name: 'John Doe',
-    email: 'johndoe@example.com',
-    phone: '+55 12 3456-7890',
-    address: 'Rua Exemplo, 123, São José dos Campos, SP, Brasil'
+    name: "John Doe",
+    email: "johndoe@example.com",
+    phone: "+55 12 3456-7890",
+    address: "Rua Exemplo, 123, São José dos Campos, SP, Brasil",
   });
 
   const [passwords, setPasswords] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
 
   const [showTerms, setShowTerms] = useState(false);
@@ -47,16 +53,16 @@ const Account: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setUser(prevState => ({ ...prevState, [name]: value }));
+    setUser((prevState) => ({ ...prevState, [name]: value }));
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setPasswords(prevState => ({ ...prevState, [name]: value }));
+    setPasswords((prevState) => ({ ...prevState, [name]: value }));
   };
 
   const navigate = useNavigate();
-  
+
   const handleSave = () => {
     // Criar o objeto no formato solicitado
     const requestBody = {
@@ -71,28 +77,22 @@ const Account: React.FC = () => {
       })),
     };
 
-    console.log('Dados enviados ao backend:', requestBody);
-
+    console.log("Dados enviados ao backend:", requestBody);
   };
 
-  const DeletarConta = () => {
-
-  }
+  const DeletarConta = () => {};
 
   const handleBack = () => {
-    navigate('/');
+    navigate("/");
   };
 
   const handlePasswordSave = () => {
     if (passwords.newPassword === passwords.confirmPassword) {
-
-
-      console.log('Senha alterada:', passwords.newPassword);
+      console.log("Senha alterada:", passwords.newPassword);
     } else {
-      console.log('As senhas não coincidem');
+      console.log("As senhas não coincidem");
     }
   };
-
 
   const toggleTerms = () => {
     setShowTerms(!showTerms);
@@ -105,7 +105,15 @@ const Account: React.FC = () => {
     setTerms(updatedTerms);
   };
 
+  const [termosAceitos, setTermosAceitos] = useState<Termo[]>([]); // Corrigir para array de Termos
 
+  useEffect(() => {
+    const userId = 1; // Substituir pelo ID real do usuário logado
+    axios
+      .get(`http://localhost:5000/aceitacao/${userId}`)
+      .then((response) => setTermosAceitos(response.data))
+      .catch((error) => console.error("Erro ao buscar termos aceitos:", error));
+  }, []);
 
   return (
     <div className="account">
@@ -113,19 +121,39 @@ const Account: React.FC = () => {
       <div className="account-info">
         <div className="info-item">
           <label>Nome:</label>
-          <input type="text" name="name" value={user.name} onChange={handleChange} />
+          <input
+            type="text"
+            name="name"
+            value={user.name}
+            onChange={handleChange}
+          />
         </div>
         <div className="info-item">
           <label>Email:</label>
-          <input type="email" name="email" value={user.email} onChange={handleChange} />
+          <input
+            type="email"
+            name="email"
+            value={user.email}
+            onChange={handleChange}
+          />
         </div>
         <div className="info-item">
           <label>Telefone:</label>
-          <input type="tel" name="phone" value={user.phone} onChange={handleChange} />
+          <input
+            type="tel"
+            name="phone"
+            value={user.phone}
+            onChange={handleChange}
+          />
         </div>
         <div className="info-item">
           <label>Endereço:</label>
-          <input type="text" name="address" value={user.address} onChange={handleChange} />
+          <input
+            type="text"
+            name="address"
+            value={user.address}
+            onChange={handleChange}
+          />
         </div>
 
         <div className="terms-of-use">
@@ -152,7 +180,8 @@ const Account: React.FC = () => {
                       type="checkbox"
                       checked={term.aceito}
                       onChange={() => handleTermChange(index)}
-                    /> Aceito
+                    />{" "}
+                    Aceito
                   </label>
                 </div>
               )}
@@ -160,6 +189,15 @@ const Account: React.FC = () => {
           ))}
         </div>
       )}
+      <div>
+        <h1>Minha Conta</h1>
+        <h3>Termos Aceitos</h3>
+        <ul>
+          {termosAceitos.map((termo) => (
+            <li key={termo.id}>{termo.descricao}</li>
+          ))}
+        </ul>
+      </div>
 
       <div className="account-buttons">
         <button onClick={handleBack}>Voltar</button>
@@ -171,19 +209,37 @@ const Account: React.FC = () => {
           <label>Senha Atual:</label>
         </div>
         <div className="password-input">
-          <input type="password" name="currentPassword" value={passwords.currentPassword} onChange={handlePasswordChange} placeholder="Senha Atual" />
+          <input
+            type="password"
+            name="currentPassword"
+            value={passwords.currentPassword}
+            onChange={handlePasswordChange}
+            placeholder="Senha Atual"
+          />
         </div>
         <div className="password-item">
           <label>Nova Senha:</label>
         </div>
         <div className="password-input">
-          <input type="password" name="newPassword" value={passwords.newPassword} onChange={handlePasswordChange} placeholder="Nova Senha" />
+          <input
+            type="password"
+            name="newPassword"
+            value={passwords.newPassword}
+            onChange={handlePasswordChange}
+            placeholder="Nova Senha"
+          />
         </div>
         <div className="password-item">
           <label>Confirmar Senha:</label>
         </div>
         <div className="password-input">
-          <input type="password" name="confirmPassword" value={passwords.confirmPassword} onChange={handlePasswordChange} placeholder="Confirmar Nova Senha" />
+          <input
+            type="password"
+            name="confirmPassword"
+            value={passwords.confirmPassword}
+            onChange={handlePasswordChange}
+            placeholder="Confirmar Nova Senha"
+          />
         </div>
         <div className="password-buttons">
           <button onClick={handlePasswordSave}>Confirmar</button>

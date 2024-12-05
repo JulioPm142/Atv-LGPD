@@ -1,53 +1,45 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import './Login.css';
+import React, { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const Login: React.FC = () => {
-  const [credentials, setCredentials] = useState({
-    email: '',
-    password: ''
-  });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setCredentials(prevState => ({ ...prevState, [name]: value }));
-  };
+  const handleLogin = async () => {
+    try {
+      const response = await axios.post("http://localhost:5000/login", {
+        email,
+        password,
+      });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Autenticar o usuário
-    console.log('Credenciais:', credentials);
+      // Salva os dados do usuário no localStorage (ou contexto global)
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+      alert("Login bem-sucedido!");
+      navigate("/home"); // Redireciona para a página inicial
+    } catch (error) {
+      console.error("Erro ao fazer login:", error);
+      alert("Credenciais inválidas.");
+    }
   };
 
   return (
-    <div className="login-container">
-      <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="email">Email:</label>
-          <input 
-            type="email" 
-            id="email" 
-            name="email" 
-            value={credentials.email} 
-            onChange={handleChange} 
-            required 
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="password">Senha:</label>
-          <input 
-            type="password" 
-            id="password" 
-            name="password" 
-            value={credentials.password} 
-            onChange={handleChange} 
-            required 
-          />
-        </div>
-        <button type="submit" className="login-button">Entrar</button>
-      </form>
-      <p>Não tem uma conta? <Link to="/Registrar">Cadastre-se</Link></p>
+    <div>
+      <h1>Login</h1>
+      <input
+        type="email"
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <input
+        type="password"
+        placeholder="Senha"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+      <button onClick={handleLogin}>Entrar</button>
     </div>
   );
 };
